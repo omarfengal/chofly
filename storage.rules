@@ -1,0 +1,36 @@
+// storage.rules
+// Deploy with: firebase deploy --only storage
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // FIX #6: Seul le customer propriétaire de la requête peut uploader
+    match /requests/{requestId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+        && get(/databases/(default)/documents/requests/$(requestId))
+             .data.customerId == request.auth.uid;
+    }
+
+    // Provider profile photos — seul le provider lui-même
+    match /providers/{uid}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == uid
+        && request.resource.size < 3 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Provider ID card — privé, admin uniquement en lecture
+    match /id_cards/{uid}/{fileName} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == uid ||
+         get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow write: if request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

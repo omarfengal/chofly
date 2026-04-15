@@ -1,0 +1,259 @@
+rules_version = '2';
+
+// ════════════════════════════════════════════════════════════════
+// CHOFLY — Firestore Security Rules v2.0  [Feature #9]
+// ════════════════════════════════════════════════════════════════
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────────────
+
+    // Is the caller authenticated?
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Is the caller a specific user?
+    function isUser(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    // Fetch the caller's role from /users/{uid}
+    function callerRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isAuth() && callerRole() == 'admin';
+    }
+
+    function isProvider() {
+      return isAuth() && callerRole() == 'provider';
+    }
+
+    function isCustomer() {
+      return isAuth() && callerRole() == 'customer';
+    }
+
+    // Is the caller an approved provider?
+    function isApprovedProvider() {
+      return isAuth() &&
+        exists(/databases/$(database)/documents/providers/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/providers/$(request.auth.uid)).data.isApproved == true;
+    }
+
+    // Is the caller blocked?
+    function isNotBlocked() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return !userDoc.data.get('isBlocked', false);
+    }
+
+    // ── Users ─────────────────────────────────────────────────
+    match /users/{uid} {
+      // Anyone authenticated can read their own profile
+      allow read: if isUser(uid) || isAdmin();
+
+      // User can create their own profile on signup
+      allow create: if isUser(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.role in ['customer', 'provider']
+        && !('isBlocked' in request.resource.data);
+
+      // User can update limited fields; admin can update all
+      allow update: if
+        (isUser(uid) && isNotBlocked()
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['name', 'wilaya', 'commune', 'profileImageUrl',
+                       'fcmToken', 'updatedAt', 'referralCode']))
+        || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    // ── Providers ─────────────────────────────────────────────
+    match /providers/{uid} {
+      // Providers can read their own profile; customers can read approved providers
+      allow read: if isUser(uid)
+        || isAdmin()
+        || (isAuth() && resource.data.isApproved == true);
+
+      // Provider creates their own profile
+      allow create: if isUser(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.isApproved == false
+        && request.resource.data.isVerified == false;
+
+      // Provider can update limited own fields; admin can update all
+      allow update: if
+        (isUser(uid) && isApprovedProvider() && isNotBlocked()
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['isOnline', 'lastSeen', 'lastLocation',
+                       'lastLocationUpdatedAt', 'bio', 'profileImageUrl']))
+        || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    // ── Requests ──────────────────────────────────────────────
+    match /requests/{requestId} {
+      // Customer reads own requests; provider reads assigned requests;
+      // admin reads all
+      allow read: if isAuth() && isNotBlocked() && (
+        resource.data.customerId == request.auth.uid
+        || resource.data.providerId == request.auth.uid
+        || isAdmin()
+      );
+
+      // Only customers (not blocked) can create requests
+      allow create: if isCustomer() && isNotBlocked()
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasAll([
+             'customerId','customerName','customerPhone',
+             'category','issueType','description',
+             'wilaya','address','createdAt'
+           ]);
+
+      // Updates: customer can cancel own pending request;
+      // provider can accept/start/complete; admin can do all
+      allow update: if isAuth() && isNotBlocked() && (
+        // Customer cancels their own pending request
+        (resource.data.customerId == request.auth.uid
+          && resource.data.status == 'pending'
+          && request.resource.data.status == 'cancelled'
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'cancelledAt']))
+
+        // Provider accepts (sets status + providerId)
+        || (isApprovedProvider()
+          && resource.data.status == 'pending'
+          && request.resource.data.status == 'accepted'
+          && request.resource.data.providerId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'providerId', 'providerName',
+                         'acceptedAt', 'needsManualAssignment']))
+
+        // Provider updates assigned request (inProgress, completed)
+        || (isApprovedProvider()
+          && resource.data.providerId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'finalPrice', 'completedAt',
+                         'startedAt', 'isRated', 'adminNote']))
+
+        // Admin can update everything
+        || isAdmin()
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // ── Chat messages  [#3] ───────────────────────────────────
+    match /chats/{requestId}/messages/{msgId} {
+      // Only participants of the request can read chat
+      allow read: if isAuth() && isNotBlocked() && (
+        get(/databases/$(database)/documents/requests/$(requestId)).data.customerId == request.auth.uid
+        || get(/databases/$(database)/documents/requests/$(requestId)).data.providerId == request.auth.uid
+        || isAdmin()
+      );
+
+      // Only participants can write
+      allow create: if isAuth() && isNotBlocked() && (
+        get(/databases/$(database)/documents/requests/$(requestId)).data.customerId == request.auth.uid
+        || get(/databases/$(database)/documents/requests/$(requestId)).data.providerId == request.auth.uid
+      )
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.type in ['text', 'image', 'system']
+        && (request.resource.data.text != null || request.resource.data.imageUrl != null);
+
+      // Only mark own messages as read
+      allow update: if isAuth()
+        && resource.data.senderId != request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+
+      allow delete: if isAdmin();
+    }
+
+    // ── Reviews ───────────────────────────────────────────────
+    match /reviews/{reviewId} {
+      allow read: if isAuth();
+
+      // Only customer who made the request, and only once
+      allow create: if isCustomer() && isNotBlocked()
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
+
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Subscriptions ─────────────────────────────────────────
+    match /subscriptions/{subId} {
+      allow read: if isAuth() && (
+        resource.data.customerId == request.auth.uid || isAdmin()
+      );
+      allow create: if isCustomer() && isNotBlocked()
+        && request.resource.data.customerId == request.auth.uid;
+      allow update: if
+        (isAuth() && resource.data.customerId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'cancelledAt']))
+        || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Promo codes  [#4] ─────────────────────────────────────
+    match /promo_codes/{promoId} {
+      // Authenticated users can read (to validate)
+      allow read: if isAuth();
+      // Only admins can create / update / delete
+      allow write: if isAdmin();
+    }
+
+    match /promo_usages/{usageId} {
+      allow read: if isAdmin();
+      allow create: if isAuth() && isNotBlocked()
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Referrals  [#10] ──────────────────────────────────────
+    match /referrals/{refId} {
+      allow read: if isAuth() && (
+        resource.data.referrerId == request.auth.uid
+        || resource.data.refereeId == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if isAuth() && isNotBlocked();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Wallets  [#10] ────────────────────────────────────────
+    match /wallets/{uid} {
+      allow read: if isUser(uid) || isAdmin();
+      // Only backend (admin SDK) writes wallets — no client write
+      allow write: if isAdmin();
+    }
+
+    match /wallet_transactions/{txId} {
+      allow read: if isAuth() && (
+        resource.data.uid == request.auth.uid || isAdmin()
+      );
+      allow write: if isAdmin();
+    }
+
+    // ── Analytics counters (internal) ─────────────────────────
+    match /_counters/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ── Deny everything else ──────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
