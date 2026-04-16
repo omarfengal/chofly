@@ -23,7 +23,6 @@ dependencies:
   provider: ^6.1.2
 
   # UI — minimal, natif autant que possible
-  google_fonts: ^6.2.1
   cached_network_image: ^3.4.1
 
   # Utils

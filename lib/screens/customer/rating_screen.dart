@@ -129,3 +129,22 @@ class _RatingScreenState extends State<RatingScreen> {
 // BUG1 FIX: CustomerProfileScreen duplicate removed from this file.
 // BUG7 FIX: launchUrlString moved to app_extensions.dart.
 // Both classes now live exclusively in customer_orders_screen.dart.
+class _ReferralAfterRatingDialog extends StatelessWidget {
+  final String uid;
+
+  const _ReferralAfterRatingDialog({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Referral'),
+      content: Text('Referral flow for user: $uid'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
+    );
+  }
+}
