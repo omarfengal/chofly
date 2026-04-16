@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppTheme {
+    static const Color red = Color(0xFFE53935);
+  static const Color textMuted = Color(0xFF9E9E9E);
   static ThemeData light() {
     const primary = Color(0xFF00C853);
 
@@ -73,7 +75,7 @@ class AppTheme {
       ),
     );
   }
-
+#
   static ThemeData dark() {
     const primary = Color(0xFF00C853);
 
