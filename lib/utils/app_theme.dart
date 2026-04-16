@@ -6,9 +6,14 @@ class AppTheme {
   static const Color yellow = Color(0xFFFBC02D);
   static const Color green = Color(0xFF00C853);
   static const Color greenDim = Color(0x1F00C853);
-  static const Color textMuted = Color(0xFF9E9E9E);
+  static const Color greenBorder = Color(0x3300C853);
+
+  static const Color textPrimary = Color(0xFF111111);
   static const Color textSecondary = Color(0xFF757575);
+  static const Color textMuted = Color(0xFF9E9E9E);
+
   static const Color border = Color(0xFFE0E0E0);
+  static const Color card2 = Color(0xFFF7F7F7);
 
   static ThemeData light() {
     const primary = Color(0xFF00C853);
@@ -17,18 +22,15 @@ class AppTheme {
       brightness: Brightness.light,
       primaryColor: primary,
       scaffoldBackgroundColor: Colors.white,
-
       colorScheme: const ColorScheme.light(
         primary: primary,
         secondary: primary,
       ),
-
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-
       textTheme: const TextTheme(
         headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -39,7 +41,6 @@ class AppTheme {
         bodyMedium: TextStyle(fontSize: 14),
         bodySmall: TextStyle(fontSize: 12),
       ),
-
       cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 0,
@@ -47,12 +48,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
         ),
       ),
-
       dividerTheme: const DividerThemeData(
         color: Colors.grey,
         thickness: 1,
       ),
-
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
         selectedItemColor: primary,
@@ -60,13 +59,11 @@ class AppTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
-
       snackBarTheme: SnackBarThemeData(
         backgroundColor: Colors.grey[900],
         contentTextStyle: const TextStyle(color: Colors.white),
         behavior: SnackBarBehavior.floating,
       ),
-
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
@@ -89,17 +86,14 @@ class AppTheme {
       brightness: Brightness.dark,
       primaryColor: primary,
       scaffoldBackgroundColor: const Color(0xFF121212),
-
       colorScheme: const ColorScheme.dark(
         primary: primary,
         secondary: primary,
       ),
-
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFF121212),
         elevation: 0,
       ),
-
       textTheme: const TextTheme(
         headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -110,7 +104,6 @@ class AppTheme {
         bodyMedium: TextStyle(fontSize: 14),
         bodySmall: TextStyle(fontSize: 12),
       ),
-
       cardTheme: CardThemeData(
         color: const Color(0xFF1E1E1E),
         elevation: 0,
@@ -118,12 +111,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
         ),
       ),
-
       dividerTheme: const DividerThemeData(
         color: Colors.white12,
         thickness: 1,
       ),
-
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Color(0xFF1E1E1E),
         selectedItemColor: primary,
@@ -131,13 +122,11 @@ class AppTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
-
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: Colors.grey[800],
+        backgroundColor: Colors.grey,
         contentTextStyle: const TextStyle(color: Colors.white),
         behavior: SnackBarBehavior.floating,
       ),
-
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
@@ -160,7 +149,6 @@ class ThemeProvider extends ChangeNotifier {
   ThemeMode _mode = ThemeMode.dark;
 
   ThemeMode get themeMode => _mode;
-
   bool get isDark => _mode == ThemeMode.dark;
 
   ThemeProvider() {
