@@ -176,6 +176,23 @@ class AuthService {
 // ════════════════════════════════════════════════════════════════
 // REQUEST SERVICE
 // ════════════════════════════════════════════════════════════════
+ Stream<int> watchAvailableProviders(String wilaya) {
+  return FirebaseFirestore.instance
+      .collection('providers')
+      .where('isAvailable', isEqualTo: true)
+      .where('wilaya', isEqualTo: wilaya)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.length);
+}
+
+Stream<int> watchAvailableProvidersGlobal() {
+  return FirebaseFirestore.instance
+      .collection('providers')
+      .where('isAvailable', isEqualTo: true)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.length);
+}
+
 class RequestService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AppTheme {
   static const Color red = Color(0xFFE53935);
   static const Color yellow = Color(0xFFFBC02D);
+  static const Color orange = Color(0xFFFF9800);
   static const Color green = Color(0xFF00C853);
   static const Color greenDim = Color(0x1F00C853);
   static const Color greenBorder = Color(0x3300C853);
@@ -11,9 +12,15 @@ class AppTheme {
   static const Color textPrimary = Color(0xFF111111);
   static const Color textSecondary = Color(0xFF757575);
   static const Color textMuted = Color(0xFF9E9E9E);
+  static const Color textMutedLight = Color(0xFFBDBDBD);
 
   static const Color border = Color(0xFFE0E0E0);
+  static const Color border2 = Color(0xFFEEEEEE);
+
+  static const Color card = Color(0xFFFFFFFF);
   static const Color card2 = Color(0xFFF7F7F7);
+
+  static const Color bg = Color(0xFFF5F5F5);
 
   static ThemeData light() {
     const primary = Color(0xFF00C853);
