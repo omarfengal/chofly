@@ -1,0 +1,107 @@
+// android/app/build.gradle
+// ─────────────────────────────────────────────────────────────────────
+// CHOFLY — Android app build config
+// Gradle 8.4 / AGP 8.2.2 / Kotlin 1.9.10 / compileSdk 34
+// ─────────────────────────────────────────────────────────────────────
+
+// ── 1. local.properties ──────────────────────────────────────────────
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader -> localProperties.load(reader) }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define flutter.sdk in local.properties")
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '2'
+def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '2.1.0'
+
+// ── 2. key.properties (signing — optionnel en debug CI) ──────────────
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+def keystoreAvailable = keystorePropertiesFile.exists()
+if (keystoreAvailable) {
+    keystorePropertiesFile.withReader('UTF-8') { reader -> keystoreProperties.load(reader) }
+}
+
+// ── 3. Plugins ────────────────────────────────────────────────────────
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+// ── 4. Android ────────────────────────────────────────────────────────
+android {
+    namespace "com.chofly.app"
+    compileSdkVersion 34
+    ndkVersion flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
+    }
+
+    kotlinOptions { jvmTarget = '1.8' }
+
+    sourceSets { main.java.srcDirs += 'src/main/kotlin' }
+
+    defaultConfig {
+        applicationId "com.chofly.app"
+        minSdkVersion 21
+        targetSdkVersion 34
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+        multiDexEnabled true
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file("${System.properties['user.home']}/.android/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+        // FIX2: if() cannot create named blocks inside signingConfigs DSL.
+        // Ternary operator inside the release block is the correct pattern.
+        release {
+            storeFile   keystoreAvailable ? file(keystoreProperties['storeFile'])   : file("${System.properties['user.home']}/.android/debug.keystore")
+            storePassword keystoreAvailable ? keystoreProperties['storePassword']   : "android"
+            keyAlias    keystoreAvailable ? keystoreProperties['keyAlias']          : "androiddebugkey"
+            keyPassword keystoreAvailable ? keystoreProperties['keyPassword']       : "android"
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig keystoreAvailable ? signingConfigs.release : signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            firebaseCrashlytics { mappingFileUploadEnabled true }
+        }
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+}
+
+flutter { source '../..' }
+
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-crashlytics'
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.android.gms:play-services-maps:18.2.0'
+    implementation 'androidx.multidex:multidex:2.0.1'
+}

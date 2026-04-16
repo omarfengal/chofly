@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Chofly brand color — utilisé pour le splash et la status bar -->
+    <color name="ic_launcher_background">#070B07</color>
+</resources>

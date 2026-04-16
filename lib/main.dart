@@ -252,7 +252,7 @@ class _ChoflyAppState extends State<ChoflyApp> {
 
       // ── Provider
       case '/provider/onboarding':
-        return _buildRoute(const ProviderOnboardingScreen());
+        return _slide(const ProviderOnboardingScreen()); // FIX1: _buildRoute undefined
       case '/provider/setup':
         return _slide(const ProviderSetupScreen());
       case '/provider/pending':
