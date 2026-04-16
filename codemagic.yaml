@@ -5,21 +5,15 @@
 # ═════════════════════════════════════════════════════════════════════
 
 workflows:
-
   android-apk:
-    name: "Android — Debug APK"
+    name: "Android Debug APK"
     max_build_duration: 40
-    instance_type: mac_mini_m2
 
     environment:
       flutter: stable
       java: 17
       groups:
-        # Seul groupe requis : contient GOOGLE_SERVICES_JSON (base64 du fichier)
-        # Créer sur Codemagic : Teams → Variables → Group "firebase_credentials"
         - firebase_credentials
-      vars:
-        PACKAGE_NAME: "com.chofly.app"
 
     triggering:
       events:
@@ -31,8 +25,7 @@ workflows:
     scripts:
       - name: "Inject google-services.json"
         script: |
-          echo $GOOGLE_SERVICES_JSON | base64 --decode \
-            > $CM_BUILD_DIR/android/app/google-services.json
+          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > "$CM_BUILD_DIR/android/app/google-services.json"
 
       - name: "Fix gradlew permissions"
         script: chmod +x android/gradlew
@@ -40,23 +33,8 @@ workflows:
       - name: "Flutter pub get"
         script: flutter pub get
 
-      - name: "Flutter analyze"
-        script: flutter analyze --no-pub
-        ignore_failure: true
-
       - name: "Build APK debug"
-        script: |
-          flutter build apk \
-            --debug \
-            --no-pub
+        script: flutter build apk --debug --no-pub
 
     artifacts:
-      - build/app/outputs/apk/debug/app-debug.apk
-
-    publishing:
-      email:
-        recipients:
-          - dev@chofly.dz
-        notify:
-          success: true
-          failure: true
+      - build/app/outputs/flutter-apk/app-debug.apk
