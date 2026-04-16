@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppTheme {
-    static const Color red = Color(0xFFE53935);
+  static const Color red = Color(0xFFE53935);
+  static const Color yellow = Color(0xFFFBC02D);
+  static const Color green = Color(0xFF00C853);
+  static const Color greenDim = Color(0x1F00C853);
   static const Color textMuted = Color(0xFF9E9E9E);
+  static const Color textSecondary = Color(0xFF757575);
+  static const Color border = Color(0xFFE0E0E0);
+
   static ThemeData light() {
     const primary = Color(0xFF00C853);
 
@@ -69,13 +75,13 @@ class AppTheme {
         ),
         trackColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
-              ? primary.withOpacity(0.5)
-              : Colors.grey.withOpacity(0.3),
+              ? primary.withValues(alpha: 0.5)
+              : Colors.grey.withValues(alpha: 0.3),
         ),
       ),
     );
   }
-#
+
   static ThemeData dark() {
     const primary = Color(0xFF00C853);
 
@@ -140,8 +146,8 @@ class AppTheme {
         ),
         trackColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
-              ? primary.withOpacity(0.5)
-              : Colors.grey.withOpacity(0.3),
+              ? primary.withValues(alpha: 0.5)
+              : Colors.grey.withValues(alpha: 0.3),
         ),
       ),
     );
